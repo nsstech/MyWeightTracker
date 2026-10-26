@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f7f4">
   <title>My Weight Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=20261026-compact">
-  <script src="weight-utils.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261026-export">
+  <script src="weight-utils.js?v=20261026-export" defer></script>
+  <script src="app.js?v=20261026-export" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -60,7 +60,7 @@
       </div>
 
       <section class="history-section" aria-labelledby="history-title">
-        <div class="section-heading"><div><p class="eyebrow">YOUR RECORD</p><h2 id="history-title">Weight history</h2></div><span class="subtle">Newest date first</span></div>
+        <div class="section-heading history-heading"><div><p class="eyebrow">YOUR RECORD</p><h2 id="history-title">Weight history</h2></div><div class="history-heading-actions"><span class="subtle">Newest date first</span><button id="export-csv" class="button export-button" type="button" disabled>↓ Export CSV</button></div></div>
         <div class="history-wrap"><div class="history-header"><span>Date</span><span>Kilograms</span><span>Pounds</span><span>Stones + pounds</span><span>Actions</span></div><div id="history-list" class="history-list"><div class="empty-state"><span aria-hidden="true">↗</span><strong>Your journey starts here</strong><p>Add your first weight to build your history.</p></div></div></div>
       </section>
     </main>

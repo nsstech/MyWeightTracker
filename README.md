@@ -4,6 +4,8 @@ A responsive, offline weight tracker built with plain HTML, CSS, and JavaScript.
 
 The progress dashboard has its own saved display unit setting. Choose kilograms, pounds, or stones + pounds without changing your entry unit or the kilograms stored for each entry.
 
+Use **Export CSV** above Weight history to download dated entries with their exact stored kilogram values and converted pound and stone values. Export works offline.
+
 ## Use locally
 
 Open `index.html` in a browser. You can also serve this folder with any static file server.

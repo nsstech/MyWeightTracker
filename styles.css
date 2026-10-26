@@ -12,3 +12,10 @@
   .stat-card strong{font-size:clamp(14px,3.9vw,17px);letter-spacing:-.5px;line-height:1.08;margin:7px 0 0}
   .stat-sub{display:none}
 }
+
+.history-heading-actions{display:flex;align-items:center;gap:18px}
+.history-heading-actions .subtle{padding-bottom:0}
+.export-button{min-height:36px;padding:8px 13px;border:1px solid #cfe2d1;background:#eaf4e9;color:#2c7448;white-space:nowrap}
+.export-button:hover:not(:disabled){background:#daebdc}
+.export-button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:580px){.history-heading{align-items:flex-start;gap:12px;flex-wrap:wrap}.history-heading-actions{width:100%;justify-content:space-between;gap:12px}}

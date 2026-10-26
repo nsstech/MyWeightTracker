@@ -55,6 +55,15 @@
     const travelled = (start - current) * Math.sign(start - target);
     return Math.max(0, Math.min(100, (travelled / total) * 100));
   }
-  return { LB_PER_KG, LB_PER_STONE, MAX_KG, kgToLb, lbToKg, kgToStonePounds, stonePoundsToKg, formatNumber, formatStone, isValidKg, parseWeight, isValidDate, progress };
+  function csvCell(value) {
+    const text = String(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+  function historyCsv(entries) {
+    const rows = [['Date', 'Kilograms', 'Pounds', 'Stones + pounds']];
+    for (const entry of entries) rows.push([entry.date, entry.kg, Number(kgToLb(entry.kg).toFixed(6)), formatStone(entry.kg)]);
+    return rows.map(row => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  }
+  return { LB_PER_KG, LB_PER_STONE, MAX_KG, kgToLb, lbToKg, kgToStonePounds, stonePoundsToKg, formatNumber, formatStone, isValidKg, parseWeight, isValidDate, progress, historyCsv };
 });
 

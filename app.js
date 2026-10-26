@@ -110,6 +110,7 @@
     const el = $('#history-list');
     el.replaceChildren();
     const entries = sortedEntries();
+    $('#export-csv').disabled = entries.length === 0;
     if (!entries.length) { const empty = document.createElement('div'); empty.className = 'empty-state'; empty.innerHTML = '<span aria-hidden="true">↗</span><strong>Your journey starts here</strong><p>Add your first weight to build your history.</p>'; el.append(empty); return; }
     entries.forEach(entry => {
       const row = document.createElement('div'); row.className = 'history-row';
@@ -149,6 +150,19 @@
     setInputs('target', state.targetKg); showNotice('Target saved.'); render();
   }
   function clearTarget() { const old = state.targetKg; state.targetKg = null; if (!save()) { state.targetKg = old; return; } setInputs('target', null); showError('target', ''); showNotice('Target removed.'); render(); }
+  function exportHistory() {
+    const entries = sortedEntries();
+    if (!entries.length) return;
+    const blob = new Blob(['\uFEFF', U.historyCsv(entries)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `my-weight-tracker-history-${today()}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   function deleteEntry(id) {
     const entry = state.entries.find(item => item.id === id); if (!entry) return;
     if (!window.confirm(`Delete the weight entry for ${displayDate(entry.date)}?`)) return;
@@ -164,6 +178,7 @@
   $('#target-form').addEventListener('submit', submitTarget);
   $('#cancel-edit').addEventListener('click', resetEntry);
   $('#clear-target').addEventListener('click', clearTarget);
+  $('#export-csv').addEventListener('click', exportHistory);
   $('#history-list').addEventListener('click', event => { const button = event.target.closest('button[data-action]'); if (!button) return; if (button.dataset.action === 'edit') startEdit(button.dataset.id); else deleteEntry(button.dataset.id); });
 })();
 

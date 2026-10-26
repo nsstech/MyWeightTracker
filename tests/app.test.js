@@ -28,6 +28,7 @@ class Element {
   append(...items) { this.children.push(...items); }
   prepend(item) { this.children.unshift(item); }
   replaceChildren(...items) { this.children = items; }
+  remove() {}
   scrollIntoView() {}
   focus() {}
   closest() { return this; }
@@ -35,20 +36,25 @@ class Element {
 
 function createApp(storage = new Map()) {
   const ids = new Map();
-  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','entry-form','target-form','history-list'];
+  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','export-csv','entry-form','target-form','history-list'];
   names.forEach(name => ids.set(name, new Element()));
   const tabs = ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.unit = unit; return el; });
   const groups = { entry: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }), target: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }) };
   const progress = new Element();
+  const downloads = [];
+  const blobs = new Map();
   const context = {
     window: { WeightUtils: U, confirm: () => true },
-    document: { querySelector(selector) { if (selector.startsWith('#')) return ids.get(selector.slice(1)); if (selector === '.progress-track') return progress; if (selector === '.entry-panel') return new Element(); throw Error(selector); }, querySelectorAll(selector) { if (selector === '.unit-tab') return tabs; const match = selector.match(/^#(entry|target)-inputs \[data-for\]$/); if (match) return groups[match[1]]; throw Error(selector); }, createElement: () => new Element() },
+    document: { querySelector(selector) { if (selector.startsWith('#')) return ids.get(selector.slice(1)); if (selector === '.progress-track') return progress; if (selector === '.entry-panel') return new Element(); throw Error(selector); }, querySelectorAll(selector) { if (selector === '.unit-tab') return tabs; const match = selector.match(/^#(entry|target)-inputs \[data-for\]$/); if (match) return groups[match[1]]; throw Error(selector); }, createElement(tag) { const el = new Element(); if (tag === 'a') el.click = () => downloads.push({ filename: el.download, content: blobs.get(el.href).parts.join('') }); return el; }, body: { append() {} } },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     crypto: { randomUUID: () => `id-${storage.size}-${Math.random()}` },
+    Blob: class { constructor(parts) { this.parts = parts; } },
+    URL: { createObjectURL(blob) { const url = `blob:test-${blobs.size}`; blobs.set(url, blob); return url; }, revokeObjectURL() {} },
+    setTimeout: callback => callback(),
     Date, Math, Number, JSON, String,
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8'), context);
-  return { ids, tabs, storage, progress, saved: () => JSON.parse(storage.get('weightline.v1')) };
+  return { ids, tabs, storage, progress, downloads, saved: () => JSON.parse(storage.get('weightline.v1')) };
 }
 
 test('entry, target, unit preference, edit, and delete persist correctly', () => {
@@ -126,5 +132,18 @@ test('stat unit choice updates cards and progress without changing stored kilogr
   const reopened = createApp(app.storage);
   assert.equal(reopened.ids.get('display-unit').value, 'st');
   assert.equal(reopened.ids.get('current-weight').textContent, U.formatStone(80));
+});
+
+test('history exports a UTF-8 CSV with canonical kilograms and converted values', () => {
+  const app = createApp(); const el = name => app.ids.get(name);
+  assert.equal(el('export-csv').disabled, true);
+  el('export-csv').dispatch('click');
+  assert.equal(app.downloads.length, 0);
+  el('entry-kg').value = '72.5'; el('entry-form').dispatch('submit');
+  assert.equal(el('export-csv').disabled, false);
+  el('export-csv').dispatch('click');
+  assert.equal(app.downloads.length, 1);
+  assert.match(app.downloads[0].filename, /^my-weight-tracker-history-\d{4}-\d{2}-\d{2}\.csv$/);
+  assert.equal(app.downloads[0].content, `\uFEFFDate,Kilograms,Pounds,Stones + pounds\r\n${app.saved().entries[0].date},72.5,${Number(U.kgToLb(72.5).toFixed(6))},${U.formatStone(72.5)}\r\n`);
 });
 
