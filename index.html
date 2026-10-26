@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7f4">
+  <title>Weightline — Weight tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="weight-utils.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">●</span> weightline</div>
+      <span class="header-note">A little progress, every day.</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">YOUR PERSONAL TRACKER</p>
+          <h1 id="page-title">Make progress<br><em>at your pace.</em></h1>
+          <p class="intro-copy">Record your weight, set a goal, and see how far you’ve come. Your data stays in this browser.</p>
+        </div>
+        <div class="intro-art" aria-hidden="true"><div class="art-circle"><span>↗</span></div><div class="art-line one"></div><div class="art-line two"></div></div>
+      </section>
+
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <section class="overview" aria-label="Your progress">
+        <div class="section-heading"><div><p class="eyebrow">THE BIG PICTURE</p><h2>Your progress</h2></div><span id="entry-count" class="subtle">0 entries</span></div>
+        <div class="stat-grid">
+          <article class="stat-card"><span class="stat-label">Starting weight</span><strong id="starting-weight">—</strong><span id="starting-sub" class="stat-sub">Add your first entry</span></article>
+          <article class="stat-card current"><span class="stat-label">Current weight</span><strong id="current-weight">—</strong><span id="current-sub" class="stat-sub">Your latest entry</span></article>
+          <article class="stat-card"><span class="stat-label">Target weight</span><strong id="target-weight">—</strong><span id="target-sub" class="stat-sub">Set a target below</span></article>
+        </div>
+        <div class="progress-panel">
+          <div class="progress-top"><div><span class="stat-label">Journey to target</span><strong id="progress-title">Set a target to see your progress</strong></div><span id="progress-percent">—</span></div>
+          <div class="progress-track" role="progressbar" aria-label="Progress toward target" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill"></div></div>
+          <p id="progress-detail" class="subtle">Your progress will appear after you add a weight and target.</p>
+        </div>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="panel entry-panel" aria-labelledby="entry-title">
+          <div class="panel-heading"><div><p class="eyebrow">CHECK IN</p><h2 id="entry-title">Add a weight</h2></div><span class="panel-icon" aria-hidden="true">＋</span></div>
+          <form id="entry-form" novalidate>
+            <label class="field-label" for="entry-date">Date</label>
+            <input id="entry-date" name="date" type="date" required>
+            <div class="field-group"><span class="field-label">Enter weight in</span><div class="unit-tabs" role="group" aria-label="Preferred weight unit"><button type="button" class="unit-tab active" data-unit="kg" aria-pressed="true">Kilograms</button><button type="button" class="unit-tab" data-unit="lb" aria-pressed="false">Pounds</button><button type="button" class="unit-tab" data-unit="st" aria-pressed="false">Stones + lb</button></div></div>
+            <div class="weight-inputs" id="entry-inputs"><div class="weight-field" data-for="kg"><label for="entry-kg">Kilograms <span>kg</span></label><input id="entry-kg" type="number" inputmode="decimal" min="0" max="1000" step="any" placeholder="e.g. 72.5"></div><div class="weight-field" data-for="lb" hidden><label for="entry-lb">Pounds <span>lb</span></label><input id="entry-lb" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 160"></div><div class="stone-fields" data-for="st" hidden><div class="weight-field"><label for="entry-st">Stones <span>st</span></label><input id="entry-st" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 11"></div><div class="weight-field"><label for="entry-st-lb">Pounds <span>lb</span></label><input id="entry-st-lb" type="number" inputmode="decimal" min="0" max="13.999" step="any" placeholder="e.g. 6"></div></div></div>
+            <div class="conversion-card"><span>Also equals</span><div id="entry-conversion">Enter a weight to see all units.</div></div>
+            <p id="entry-error" class="field-error" role="alert" hidden></p>
+            <div class="form-actions"><button id="entry-submit" class="button primary" type="submit">Save weight</button><button id="cancel-edit" class="button text-button" type="button" hidden>Cancel edit</button></div>
+          </form>
+        </section>
+
+        <section class="panel target-panel" aria-labelledby="target-title">
+          <div class="panel-heading"><div><p class="eyebrow">LOOK AHEAD</p><h2 id="target-title">Your target</h2></div><span class="panel-icon target-icon" aria-hidden="true">◎</span></div>
+          <p class="panel-copy">Choose a goal weight. You can change it whenever you like.</p>
+          <form id="target-form" novalidate>
+            <div class="weight-inputs" id="target-inputs"><div class="weight-field" data-for="kg"><label for="target-kg">Kilograms <span>kg</span></label><input id="target-kg" type="number" inputmode="decimal" min="0" max="1000" step="any" placeholder="e.g. 68"></div><div class="weight-field" data-for="lb" hidden><label for="target-lb">Pounds <span>lb</span></label><input id="target-lb" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 150"></div><div class="stone-fields" data-for="st" hidden><div class="weight-field"><label for="target-st">Stones <span>st</span></label><input id="target-st" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 10"></div><div class="weight-field"><label for="target-st-lb">Pounds <span>lb</span></label><input id="target-st-lb" type="number" inputmode="decimal" min="0" max="13.999" step="any" placeholder="e.g. 10"></div></div></div>
+            <div class="conversion-card"><span>Also equals</span><div id="target-conversion">Enter a weight to see all units.</div></div>
+            <p id="target-error" class="field-error" role="alert" hidden></p>
+            <div class="form-actions"><button class="button secondary" type="submit">Save target</button><button id="clear-target" class="button text-button" type="button" hidden>Remove target</button></div>
+          </form>
+        </section>
+      </div>
+
+      <section class="history-section" aria-labelledby="history-title">
+        <div class="section-heading"><div><p class="eyebrow">YOUR RECORD</p><h2 id="history-title">Weight history</h2></div><span class="subtle">Newest date first</span></div>
+        <div class="history-wrap"><div class="history-header"><span>Date</span><span>Kilograms</span><span>Pounds</span><span>Stones + pounds</span><span>Actions</span></div><div id="history-list" class="history-list"><div class="empty-state"><span aria-hidden="true">↗</span><strong>Your journey starts here</strong><p>Add your first weight to build your history.</p></div></div></div>
+      </section>
+    </main>
+    <footer>Made for steady progress. Saved privately on this device.</footer>
+  </div>
+</body>
+</html>
+
