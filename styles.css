@@ -6,9 +6,9 @@
 .section-heading h1{font-size:27px;letter-spacing:-1.1px;margin:0}
 @media(max-width:580px){
   .section-heading h1{font-size:24px}
-  .stat-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-  .stat-card,.stat-card:last-child{grid-column:auto;min-width:0;min-height:98px;padding:12px 10px;border-radius:12px}
-  .stat-label{font-size:10px;line-height:1.2}
-  .stat-card strong{font-size:clamp(16px,4.4vw,20px);letter-spacing:-.7px;line-height:1.15;margin:9px 0 0}
+  .stat-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .stat-card,.stat-card:last-child{grid-column:auto;min-width:0;min-height:78px;padding:9px 8px;border-radius:10px}
+  .stat-label{font-size:9px;line-height:1.15;font-weight:700}
+  .stat-card strong{font-size:clamp(14px,3.9vw,17px);letter-spacing:-.5px;line-height:1.08;margin:7px 0 0}
   .stat-sub{display:none}
 }
