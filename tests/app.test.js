@@ -35,7 +35,7 @@ class Element {
 
 function createApp(storage = new Map()) {
   const ids = new Map();
-  const names = ['notice','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','entry-form','target-form','history-list'];
+  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','entry-form','target-form','history-list'];
   names.forEach(name => ids.set(name, new Element()));
   const tabs = ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.unit = unit; return el; });
   const groups = { entry: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }), target: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }) };
@@ -106,5 +106,25 @@ test('saved entries, target, and unit load after reopening', () => {
   assert.equal(reopened.ids.get('entry-count').textContent, '1 entry');
   assert.equal(reopened.ids.get('target-weight').textContent, '68 kg');
   assert.equal(reopened.tabs[2].attributes['aria-pressed'], 'true');
+});
+
+test('stat unit choice updates cards and progress without changing stored kilograms', () => {
+  const app = createApp(); const el = name => app.ids.get(name);
+  el('entry-kg').value = '80'; el('entry-form').dispatch('submit');
+  el('target-kg').value = '70'; el('target-form').dispatch('submit');
+  assert.equal(el('current-weight').textContent, '80 kg');
+  el('display-unit').value = 'lb'; el('display-unit').dispatch('change');
+  assert.equal(el('current-weight').textContent, `${U.formatNumber(U.kgToLb(80))} lb`);
+  assert.match(el('progress-title').textContent, /22 lb above target/);
+  assert.match(el('progress-detail').textContent, /lb toward/);
+  assert.equal(app.saved().displayUnit, 'lb');
+  el('display-unit').value = 'st'; el('display-unit').dispatch('change');
+  assert.equal(el('starting-weight').textContent, U.formatStone(80));
+  assert.equal(el('target-weight').textContent, U.formatStone(70));
+  assert.match(el('progress-title').textContent, /st .* lb above target/);
+  assert.equal(app.saved().entries[0].kg, 80);
+  const reopened = createApp(app.storage);
+  assert.equal(reopened.ids.get('display-unit').value, 'st');
+  assert.equal(reopened.ids.get('current-weight').textContent, U.formatStone(80));
 });
 
