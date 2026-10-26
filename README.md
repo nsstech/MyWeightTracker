@@ -1,4 +1,4 @@
-# Weightline
+# My Weight Tracker
 
 A responsive, offline weight tracker built with plain HTML, CSS, and JavaScript. Entries, target weight, and preferred input unit are saved in the browser's localStorage. No account, backend, build step, or external assets are required.
 
