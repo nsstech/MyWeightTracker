@@ -2,6 +2,8 @@
 
 A responsive, offline weight tracker built with plain HTML, CSS, and JavaScript. Entries, target weight, and preferred input unit are saved in the browser's localStorage. No account, backend, build step, or external assets are required.
 
+The progress dashboard has its own saved display unit setting. Choose kilograms, pounds, or stones + pounds without changing your entry unit or the kilograms stored for each entry.
+
 ## Use locally
 
 Open `index.html` in a browser. You can also serve this folder with any static file server.
