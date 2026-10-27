@@ -46,8 +46,9 @@ function createApp(storage = new Map()) {
   const downloads = [];
   const blobs = new Map();
   let confirmResult = true;
+  let confirmSequence = [];
   const context = {
-    window: { WeightUtils: U, confirm: () => confirmResult },
+    window: { WeightUtils: U, confirm: () => confirmSequence.length ? confirmSequence.shift() : confirmResult },
     document: { querySelector(selector) { if (selector.startsWith('#')) return ids.get(selector.slice(1)); if (selector === '.progress-track') return progress; if (selector === '.entry-panel') return new Element(); throw Error(selector); }, querySelectorAll(selector) { if (selector === '.unit-tab') return tabs; const match = selector.match(/^#(entry|target)-inputs \[data-for\]$/); if (match) return groups[match[1]]; throw Error(selector); }, createElement(tag) { const el = new Element(); if (tag === 'a') el.click = () => downloads.push({ filename: el.download, content: blobs.get(el.href).parts.join('') }); return el; }, body: { append() {} } },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     crypto: { randomUUID: () => `id-${storage.size}-${Math.random()}` },
@@ -57,7 +58,7 @@ function createApp(storage = new Map()) {
     Date, Math, Number, JSON, String,
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8'), context);
-  return { ids, tabs, storage, progress, downloads, setConfirm: value => { confirmResult = value; }, saved: () => JSON.parse(storage.get('weightline.v1')) };
+  return { ids, tabs, storage, progress, downloads, setConfirm: value => { confirmResult = value; }, setConfirmSequence: values => { confirmSequence = [...values]; }, saved: () => JSON.parse(storage.get('weightline.v1')) };
 }
 
 test('entry, target, unit preference, edit, and delete persist correctly', () => {
@@ -160,7 +161,10 @@ test('reset cancellation preserves data; confirmed reset clears data, inputs, an
   app.setConfirm(false); el('reset-app').dispatch('click');
   assert.equal(app.saved().entries.length, 1);
   assert.equal(app.saved().targetKg, 70);
+  assert.equal(app.downloads.length, 0);
   app.setConfirm(true); el('reset-app').dispatch('click');
+  assert.equal(app.downloads.length, 1);
+  assert.equal(JSON.parse(app.downloads[0].content).data.entries.length, 1);
   assert.equal(app.storage.has('weightline.v1'), false);
   assert.equal(el('entry-count').textContent, '0 entries');
   assert.equal(el('target-weight').textContent, '—');
@@ -174,6 +178,19 @@ test('reset cancellation preserves data; confirmed reset clears data, inputs, an
   const reopened = createApp(app.storage);
   assert.equal(reopened.ids.get('entry-count').textContent, '0 entries');
   assert.equal(reopened.ids.get('display-unit').value, 'kg');
+});
+
+test('reset can proceed without backup or stop after downloading one', () => {
+  const app = createApp(); const el = name => app.ids.get(name);
+  el('entry-kg').value = '80'; el('entry-form').dispatch('submit');
+  app.setConfirmSequence([true, false]);
+  el('reset-app').dispatch('click');
+  assert.equal(app.downloads.length, 1);
+  assert.equal(app.saved().entries.length, 1);
+  app.setConfirmSequence([false, true]);
+  el('reset-app').dispatch('click');
+  assert.equal(app.downloads.length, 1);
+  assert.equal(app.storage.has('weightline.v1'), false);
 });
 
 test('JSON backup and restore preserve entries, target, and both unit settings', async () => {

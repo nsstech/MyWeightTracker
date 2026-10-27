@@ -151,6 +151,7 @@
   }
   function clearTarget() { const old = state.targetKg; state.targetKg = null; if (!save()) { state.targetKg = old; return; } setInputs('target', null); showError('target', ''); showNotice('Target removed.'); render(); }
   function resetApp() {
+    if (window.confirm('Download a JSON backup before resetting My Weight Tracker? Select Cancel to continue without a backup.')) backupData();
     if (!window.confirm('Reset My Weight Tracker? This permanently deletes all saved weight entries, target, and unit preferences from this browser. This cannot be undone.')) return;
     try { localStorage.removeItem(STORAGE_KEY); }
     catch { showNotice('Could not clear saved data from this browser. Check that local storage is enabled.'); return; }
