@@ -29,3 +29,7 @@
   .row-actions{grid-column:auto;justify-content:flex-end;gap:6px;border-top:0;padding-top:0;white-space:nowrap}
   .row-button{font-size:11px}
 }
+
+footer{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap}
+.reset-button{border:0;background:transparent;color:#a87870;font-size:12px;font-weight:700;padding:6px;text-decoration:underline;text-underline-offset:2px}
+.reset-button:hover{color:#8e534b}

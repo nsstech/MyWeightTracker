@@ -36,17 +36,18 @@ class Element {
 
 function createApp(storage = new Map()) {
   const ids = new Map();
-  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','export-csv','entry-form','target-form','history-list'];
+  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','export-csv','reset-app','entry-form','target-form','history-list'];
   names.forEach(name => ids.set(name, new Element()));
   const tabs = ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.unit = unit; return el; });
   const groups = { entry: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }), target: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }) };
   const progress = new Element();
   const downloads = [];
   const blobs = new Map();
+  let confirmResult = true;
   const context = {
-    window: { WeightUtils: U, confirm: () => true },
+    window: { WeightUtils: U, confirm: () => confirmResult },
     document: { querySelector(selector) { if (selector.startsWith('#')) return ids.get(selector.slice(1)); if (selector === '.progress-track') return progress; if (selector === '.entry-panel') return new Element(); throw Error(selector); }, querySelectorAll(selector) { if (selector === '.unit-tab') return tabs; const match = selector.match(/^#(entry|target)-inputs \[data-for\]$/); if (match) return groups[match[1]]; throw Error(selector); }, createElement(tag) { const el = new Element(); if (tag === 'a') el.click = () => downloads.push({ filename: el.download, content: blobs.get(el.href).parts.join('') }); return el; }, body: { append() {} } },
-    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
+    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     crypto: { randomUUID: () => `id-${storage.size}-${Math.random()}` },
     Blob: class { constructor(parts) { this.parts = parts; } },
     URL: { createObjectURL(blob) { const url = `blob:test-${blobs.size}`; blobs.set(url, blob); return url; }, revokeObjectURL() {} },
@@ -54,7 +55,7 @@ function createApp(storage = new Map()) {
     Date, Math, Number, JSON, String,
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8'), context);
-  return { ids, tabs, storage, progress, downloads, saved: () => JSON.parse(storage.get('weightline.v1')) };
+  return { ids, tabs, storage, progress, downloads, setConfirm: value => { confirmResult = value; }, saved: () => JSON.parse(storage.get('weightline.v1')) };
 }
 
 test('entry, target, unit preference, edit, and delete persist correctly', () => {
@@ -145,5 +146,31 @@ test('history exports a UTF-8 CSV with canonical kilograms and converted values'
   assert.equal(app.downloads.length, 1);
   assert.match(app.downloads[0].filename, /^my-weight-tracker-history-\d{4}-\d{2}-\d{2}\.csv$/);
   assert.equal(app.downloads[0].content, `\uFEFFDate,Kilograms,Pounds,Stones + pounds\r\n${app.saved().entries[0].date},72.5,${Number(U.kgToLb(72.5).toFixed(6))},${U.formatStone(72.5)}\r\n`);
+});
+
+test('reset cancellation preserves data; confirmed reset clears data, inputs, and preferences', () => {
+  const app = createApp(); const el = name => app.ids.get(name);
+  el('entry-kg').value = '80'; el('entry-form').dispatch('submit');
+  el('target-kg').value = '70'; el('target-form').dispatch('submit');
+  app.tabs[2].dispatch('click');
+  el('display-unit').value = 'lb'; el('display-unit').dispatch('change');
+  el('entry-st').value = '12'; el('entry-st-lb').value = '4';
+  app.setConfirm(false); el('reset-app').dispatch('click');
+  assert.equal(app.saved().entries.length, 1);
+  assert.equal(app.saved().targetKg, 70);
+  app.setConfirm(true); el('reset-app').dispatch('click');
+  assert.equal(app.storage.has('weightline.v1'), false);
+  assert.equal(el('entry-count').textContent, '0 entries');
+  assert.equal(el('target-weight').textContent, '—');
+  assert.equal(el('entry-st').value, '');
+  assert.equal(el('entry-st-lb').value, '');
+  assert.equal(el('target-kg').value, '');
+  assert.equal(el('display-unit').value, 'kg');
+  assert.equal(app.tabs[0].attributes['aria-pressed'], 'true');
+  assert.equal(el('export-csv').disabled, true);
+  assert.match(el('notice').textContent, /App reset/);
+  const reopened = createApp(app.storage);
+  assert.equal(reopened.ids.get('entry-count').textContent, '0 entries');
+  assert.equal(reopened.ids.get('display-unit').value, 'kg');
 });
 

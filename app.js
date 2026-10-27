@@ -150,6 +150,20 @@
     setInputs('target', state.targetKg); showNotice('Target saved.'); render();
   }
   function clearTarget() { const old = state.targetKg; state.targetKg = null; if (!save()) { state.targetKg = old; return; } setInputs('target', null); showError('target', ''); showNotice('Target removed.'); render(); }
+  function resetApp() {
+    if (!window.confirm('Reset My Weight Tracker? This permanently deletes all saved weight entries, target, and unit preferences from this browser. This cannot be undone.')) return;
+    try { localStorage.removeItem(STORAGE_KEY); }
+    catch { showNotice('Could not clear saved data from this browser. Check that local storage is enabled.'); return; }
+    state.entries = [];
+    state.targetKg = null;
+    state.unit = 'kg';
+    state.displayUnit = 'kg';
+    resetEntry();
+    setInputs('target', null);
+    showError('target', '');
+    render();
+    showNotice('App reset. All saved data has been cleared.');
+  }
   function exportHistory() {
     const entries = sortedEntries();
     if (!entries.length) return;
@@ -179,6 +193,7 @@
   $('#cancel-edit').addEventListener('click', resetEntry);
   $('#clear-target').addEventListener('click', clearTarget);
   $('#export-csv').addEventListener('click', exportHistory);
+  $('#reset-app').addEventListener('click', resetApp);
   $('#history-list').addEventListener('click', event => { const button = event.target.closest('button[data-action]'); if (!button) return; if (button.dataset.action === 'edit') startEdit(button.dataset.id); else deleteEntry(button.dataset.id); });
 })();
 
