@@ -164,6 +164,55 @@
     render();
     showNotice('App reset. All saved data has been cleared.');
   }
+  function backupData() {
+    const data = { entries: state.entries, targetKg: state.targetKg, unit: state.unit, displayUnit: state.displayUnit };
+    const backup = { format: 'my-weight-tracker', version: 1, exportedAt: new Date().toISOString(), data };
+    const blob = new Blob([JSON.stringify(backup, null, 2) + '\n'], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `my-weight-tracker-backup-${today()}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showNotice('Backup downloaded. Keep the JSON file somewhere safe.');
+  }
+  function parseBackup(text) {
+    const backup = JSON.parse(text);
+    if (!backup || backup.format !== 'my-weight-tracker' || backup.version !== 1 || !backup.data || typeof backup.data !== 'object') throw Error('Invalid backup format.');
+    const data = backup.data;
+    if (!Array.isArray(data.entries) || data.entries.length > 100000 || ![null, undefined].includes(data.targetKg) && !U.isValidKg(data.targetKg) || !['kg', 'lb', 'st'].includes(data.unit) || !['kg', 'lb', 'st'].includes(data.displayUnit)) throw Error('Invalid backup data.');
+    const ids = new Set();
+    const entries = data.entries.map(entry => {
+      if (!entry || typeof entry.id !== 'string' || !entry.id || ids.has(entry.id) || !U.isValidDate(entry.date, today()) || !U.isValidKg(entry.kg) || !Number.isFinite(entry.createdAt)) throw Error('Invalid weight entry in backup.');
+      ids.add(entry.id);
+      return { id: entry.id, date: entry.date, kg: entry.kg, createdAt: entry.createdAt };
+    });
+    return { entries, targetKg: data.targetKg ?? null, unit: data.unit, displayUnit: data.displayUnit };
+  }
+  async function restoreData(event) {
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showNotice('Backup file is too large. Choose a file under 5 MB.'); return; }
+    let data;
+    try { data = parseBackup(await file.text()); }
+    catch { showNotice('Could not restore this file. Choose a valid My Weight Tracker JSON backup.'); return; }
+    if (!window.confirm(`Restore ${data.entries.length} weight ${data.entries.length === 1 ? 'entry' : 'entries'} from this backup? This replaces all entries, the target, and unit preferences currently saved in this browser.`)) return;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    catch { showNotice('Could not save the backup to this browser. Check that local storage is enabled and space is available.'); return; }
+    state.entries = data.entries;
+    state.targetKg = data.targetKg;
+    state.unit = data.unit;
+    state.displayUnit = data.displayUnit;
+    resetEntry();
+    setInputs('target', state.targetKg);
+    showError('target', '');
+    render();
+    showNotice(`Backup restored. ${data.entries.length} weight ${data.entries.length === 1 ? 'entry' : 'entries'} loaded.`);
+  }
   function exportHistory() {
     const entries = sortedEntries();
     if (!entries.length) return;
@@ -193,6 +242,9 @@
   $('#cancel-edit').addEventListener('click', resetEntry);
   $('#clear-target').addEventListener('click', clearTarget);
   $('#export-csv').addEventListener('click', exportHistory);
+  $('#backup-data').addEventListener('click', backupData);
+  $('#restore-data').addEventListener('click', () => $('#restore-file').click());
+  $('#restore-file').addEventListener('change', restoreData);
   $('#reset-app').addEventListener('click', resetApp);
   $('#history-list').addEventListener('click', event => { const button = event.target.closest('button[data-action]'); if (!button) return; if (button.dataset.action === 'edit') startEdit(button.dataset.id); else deleteEntry(button.dataset.id); });
 })();

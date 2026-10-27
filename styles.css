@@ -31,5 +31,9 @@
 }
 
 footer{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap}
+.data-actions{display:flex;justify-content:center;align-items:center;gap:8px 14px;flex-wrap:wrap}
+.data-actions button{border:0;background:transparent;color:#397456;font-size:12px;font-weight:700;padding:6px;text-decoration:underline;text-underline-offset:2px}
+.data-actions button:hover{color:#245a3d}
 .reset-button{border:0;background:transparent;color:#a87870;font-size:12px;font-weight:700;padding:6px;text-decoration:underline;text-underline-offset:2px}
-.reset-button:hover{color:#8e534b}
+.data-actions .reset-button{color:#a87870}
+.data-actions .reset-button:hover{color:#8e534b}

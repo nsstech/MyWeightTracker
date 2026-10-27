@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f7f4">
   <title>My Weight Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=20261027-reset">
+  <link rel="stylesheet" href="styles.css?v=20261027-backup">
   <script src="weight-utils.js?v=20261026-export" defer></script>
-  <script src="app.js?v=20261027-reset" defer></script>
+  <script src="app.js?v=20261027-backup" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -64,7 +64,7 @@
         <div class="history-wrap"><div class="history-header"><span>Date</span><span>Kilograms</span><span>Pounds</span><span>Stones + pounds</span><span>Actions</span></div><div id="history-list" class="history-list"><div class="empty-state"><span aria-hidden="true">↗</span><strong>Your journey starts here</strong><p>Add your first weight to build your history.</p></div></div></div>
       </section>
     </main>
-    <footer><span>Made for steady progress. Saved privately on this device.</span><button id="reset-app" class="reset-button" type="button">Reset app</button></footer>
+    <footer><span>Made for steady progress. Saved privately on this device.</span><div class="data-actions"><button id="backup-data" type="button">Backup JSON</button><button id="restore-data" type="button">Restore JSON</button><button id="reset-app" class="reset-button" type="button">Reset app</button><input id="restore-file" type="file" accept=".json,application/json" aria-label="Choose a My Weight Tracker backup file" hidden></div></footer>
   </div>
 </body>
 </html>

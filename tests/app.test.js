@@ -24,6 +24,8 @@ class Element {
   set value(value) { this._value = String(value); }
   addEventListener(type, handler) { this.listeners[type] = handler; }
   dispatch(type, event = {}) { this.listeners[type]?.({ preventDefault() {}, target: this, ...event }); }
+  dispatchAsync(type, event = {}) { return this.listeners[type]?.({ preventDefault() {}, target: this, ...event }); }
+  click() { this.dispatch('click'); }
   setAttribute(key, value) { this.attributes[key] = value; }
   append(...items) { this.children.push(...items); }
   prepend(item) { this.children.unshift(item); }
@@ -36,7 +38,7 @@ class Element {
 
 function createApp(storage = new Map()) {
   const ids = new Map();
-  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','target-lb','target-st','target-st-lb','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','export-csv','reset-app','entry-form','target-form','history-list'];
+  const names = ['notice','display-unit','entry-count','starting-weight','starting-sub','current-weight','current-sub','target-weight','target-sub','target-st','target-st-lb','target-lb','progress-title','progress-percent','progress-fill','progress-detail','entry-date','entry-kg','entry-lb','entry-st','entry-st-lb','target-kg','entry-conversion','target-conversion','entry-error','target-error','entry-title','entry-submit','cancel-edit','clear-target','export-csv','backup-data','restore-data','restore-file','reset-app','entry-form','target-form','history-list'];
   names.forEach(name => ids.set(name, new Element()));
   const tabs = ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.unit = unit; return el; });
   const groups = { entry: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }), target: ['kg','lb','st'].map(unit => { const el = new Element(); el.dataset.for = unit; return el; }) };
@@ -172,5 +174,56 @@ test('reset cancellation preserves data; confirmed reset clears data, inputs, an
   const reopened = createApp(app.storage);
   assert.equal(reopened.ids.get('entry-count').textContent, '0 entries');
   assert.equal(reopened.ids.get('display-unit').value, 'kg');
+});
+
+test('JSON backup and restore preserve entries, target, and both unit settings', async () => {
+  const app = createApp(); const el = name => app.ids.get(name);
+  el('entry-kg').value = '82.125'; el('entry-form').dispatch('submit');
+  el('target-kg').value = '71.5'; el('target-form').dispatch('submit');
+  app.tabs[2].dispatch('click');
+  el('display-unit').value = 'lb'; el('display-unit').dispatch('change');
+  const original = app.saved();
+  el('backup-data').dispatch('click');
+  assert.equal(app.downloads.length, 1);
+  assert.match(app.downloads[0].filename, /^my-weight-tracker-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  const backup = JSON.parse(app.downloads[0].content);
+  assert.equal(backup.format, 'my-weight-tracker');
+  assert.equal(backup.version, 1);
+  assert.deepEqual(backup.data, original);
+  el('reset-app').dispatch('click');
+  assert.equal(app.storage.has('weightline.v1'), false);
+  let pickerOpened = false;
+  el('restore-file').click = () => { pickerOpened = true; };
+  el('restore-data').dispatch('click');
+  assert.equal(pickerOpened, true);
+  el('restore-file').files = [{ size: app.downloads[0].content.length, text: async () => app.downloads[0].content }];
+  await el('restore-file').dispatchAsync('change');
+  assert.deepEqual(app.saved(), original);
+  assert.equal(el('entry-count').textContent, '1 entry');
+  assert.equal(el('target-weight').textContent, `${U.formatNumber(U.kgToLb(71.5))} lb`);
+  assert.equal(el('display-unit').value, 'lb');
+  assert.equal(app.tabs[2].attributes['aria-pressed'], 'true');
+  assert.equal(el('entry-kg').value, '');
+  assert.match(el('notice').textContent, /Backup restored/);
+});
+
+test('restore rejects invalid files and respects cancellation without changing saved data', async () => {
+  const app = createApp(); const el = name => app.ids.get(name);
+  el('entry-kg').value = '80'; el('entry-form').dispatch('submit');
+  const original = JSON.stringify(app.saved());
+  const restore = async content => {
+    el('restore-file').files = [{ size: content.length, text: async () => content }];
+    await el('restore-file').dispatchAsync('change');
+  };
+  await restore('{bad json');
+  assert.match(el('notice').textContent, /valid My Weight Tracker JSON backup/);
+  assert.equal(JSON.stringify(app.saved()), original);
+  const bad = { format: 'my-weight-tracker', version: 1, data: { ...app.saved(), entries: [{ ...app.saved().entries[0], kg: -1 }] } };
+  await restore(JSON.stringify(bad));
+  assert.equal(JSON.stringify(app.saved()), original);
+  app.setConfirm(false);
+  const replacement = { format: 'my-weight-tracker', version: 1, data: { entries: [], targetKg: null, unit: 'kg', displayUnit: 'kg' } };
+  await restore(JSON.stringify(replacement));
+  assert.equal(JSON.stringify(app.saved()), original);
 });
 

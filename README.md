@@ -6,7 +6,9 @@ The progress dashboard has its own saved display unit setting. Choose kilograms,
 
 Use **Export CSV** above Weight history to download dated entries with their exact stored kilogram values and converted pound and stone values. Export works offline.
 
-Use **Reset app** in the footer to clear all saved entries, the target weight, unit preferences, and form inputs. The app asks for confirmation because reset cannot be undone. Export a CSV first if you want a backup of your history.
+Use **Reset app** in the footer to clear all saved entries, the target weight, unit preferences, and form inputs. The app asks for confirmation because reset cannot be undone. Download a JSON backup first if you may want to restore your data.
+
+Use **Backup JSON** in the footer to download all weight entries, the target weight, and both unit preferences. Use **Restore JSON** to load that file on this or another browser. Restore checks the file and asks before replacing the data currently saved in the browser. Keep the JSON file if you want to restore settings as well as history; CSV is for reading your history in a spreadsheet.
 
 ## Use locally
 
@@ -20,5 +22,5 @@ Each browser and device has its own localStorage data. Clearing browser site dat
 
 ## Tests
 
-Run `node --test tests/app.test.js` with Node.js. The tests cover conversions, validation, saving entries and targets, unit preference, editing, deletion, CSV export, and reset.
+Run `node --test tests/app.test.js` with Node.js. The tests cover conversions, validation, saving entries and targets, unit preference, editing, deletion, CSV export, reset, and JSON backup and restore.
 
